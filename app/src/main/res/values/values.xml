@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.JenuGumpu" parent="android:Theme.Material.Light.NoActionBar" />
+    <string name="app_name">Jenu-Gumpu</string>
+    <!-- Replace with your OAuth 2.0 Web client ID from Google Cloud Console -->
+    <string name="google_web_client_id" translatable="false">REPLACE_WITH_WEB_CLIENT_ID</string>
+    <color name="brand_primary_container">#FFDBC0</color>
+</resources>
