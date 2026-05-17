@@ -13,22 +13,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.BrandPrimary
 
 @Composable
 fun Error404Screen(navController: NavController) {
-    val s = appStrings()
-
     Box(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("404", fontSize = 80.sp, fontWeight = FontWeight.Black, color = BrandPrimary.copy(alpha = 0.1f))
-            Text(s.error404Title, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text(s.error404Subtitle, color = Color.Gray, modifier = Modifier.padding(top = 8.dp, bottom = 32.dp))
+            Text(t(StringKeys.ERROR_404_TITLE), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(t(StringKeys.ERROR_404_SUBTITLE), color = Color.Gray, modifier = Modifier.padding(top = 8.dp, bottom = 32.dp))
 
             Button(
                 onClick = { navController.navigate(Screen.Dashboard.route) },
@@ -38,7 +37,7 @@ fun Error404Screen(navController: NavController) {
             ) {
                 Icon(Icons.Default.Home, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(s.backToHome)
+                Text(t(StringKeys.BACK_TO_HOME))
             }
         }
     }

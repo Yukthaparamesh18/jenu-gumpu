@@ -16,15 +16,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.jenugumpu.app.R
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.BrandPrimary
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavController) {
-    val s = appStrings()
-
     LaunchedEffect(Unit) {
         delay(2500)
         navController.navigate(Screen.Login.route) {
@@ -44,19 +43,19 @@ fun SplashScreen(navController: NavController) {
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo),
-                contentDescription = s.appLogo,
+                contentDescription = t(StringKeys.APP_LOGO),
                 modifier = Modifier.size(120.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = s.appName,
+                text = t(StringKeys.APP_NAME),
                 fontSize = 42.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = BrandPrimary,
                 letterSpacing = (-1).sp
             )
             Text(
-                text = s.tagline,
+                text = t(StringKeys.TAGLINE),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),

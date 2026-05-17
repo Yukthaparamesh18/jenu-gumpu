@@ -20,15 +20,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
+import com.jenugumpu.app.localization.tPendingBatchLabel
 import com.jenugumpu.app.ui.components.AppTopBar
 import com.jenugumpu.app.ui.components.JenuGumpuBottomBar
 import com.jenugumpu.app.ui.theme.*
 
 @Composable
 fun OfflineModeScreen(navController: NavController) {
-    val s = appStrings()
-
     Scaffold(
         topBar = { AppTopBar() },
         bottomBar = { JenuGumpuBottomBar(navController) }
@@ -59,9 +59,9 @@ fun OfflineModeScreen(navController: NavController) {
                         ) {
                             Icon(Icons.Default.CloudOff, contentDescription = null, tint = BrandOutline.copy(alpha = 0.4f), modifier = Modifier.size(40.dp))
                         }
-                        Text(s.offlineModeTitle, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text(t(StringKeys.OFFLINE_MODE_TITLE), fontSize = 22.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            s.offlineModeDescription,
+                            t(StringKeys.OFFLINE_MODE_DESCRIPTION),
                             textAlign = TextAlign.Center,
                             fontSize = 14.sp,
                             color = OnBrandSurfaceVariant
@@ -83,7 +83,7 @@ fun OfflineModeScreen(navController: NavController) {
                                     tint = OnBrandSecondaryContainer
                                 )
                                 Text(
-                                    s.harvestLogsPendingSync,
+                                    t(StringKeys.HARVEST_LOGS_PENDING_SYNC),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = OnBrandSecondaryContainer
@@ -100,9 +100,9 @@ fun OfflineModeScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(s.specificRecordsWaiting, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = BrandSecondary)
+                    Text(t(StringKeys.SPECIFIC_RECORDS_WAITING), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = BrandSecondary)
                     Surface(shape = CircleShape, color = BrandSurfaceHigh) {
-                        Text(s.itemsCount, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(t(StringKeys.ITEMS_COUNT), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -126,8 +126,8 @@ fun OfflineModeScreen(navController: NavController) {
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(s.pendingBatchLabel(i), fontWeight = FontWeight.Bold)
-                            Text(s.harvestLogEntry, fontSize = 12.sp, color = Color.Gray)
+                            Text(tPendingBatchLabel(i), fontWeight = FontWeight.Bold)
+                            Text(t(StringKeys.HARVEST_LOG_ENTRY), fontSize = 12.sp, color = Color.Gray)
                         }
                         Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.Gray)
                     }

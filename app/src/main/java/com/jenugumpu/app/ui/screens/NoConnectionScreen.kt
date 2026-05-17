@@ -12,14 +12,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.BrandPrimary
 
 @Composable
 fun NoConnectionScreen(navController: NavController) {
-    val s = appStrings()
-
     Box(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         contentAlignment = Alignment.Center
@@ -32,8 +31,8 @@ fun NoConnectionScreen(navController: NavController) {
                 tint = BrandPrimary.copy(alpha = 0.2f)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(s.noConnection, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            Text(s.checkInternet, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 32.dp))
+            Text(t(StringKeys.NO_CONNECTION), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text(t(StringKeys.CHECK_INTERNET), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 32.dp))
 
             Button(
                 onClick = { /* Retry */ },
@@ -41,7 +40,7 @@ fun NoConnectionScreen(navController: NavController) {
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
             ) {
-                Text(s.retry)
+                Text(t(StringKeys.RETRY))
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -51,7 +50,7 @@ fun NoConnectionScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text(s.goOffline, color = MaterialTheme.colorScheme.secondary)
+                Text(t(StringKeys.GO_OFFLINE), color = MaterialTheme.colorScheme.secondary)
             }
         }
     }

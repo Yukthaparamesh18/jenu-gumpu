@@ -17,7 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.model.Notification
 import com.jenugumpu.app.ui.theme.BrandPrimary
 import com.jenugumpu.app.ui.theme.BrandSecondary
@@ -32,8 +33,6 @@ fun NotificationDialog(
     onDismiss: () -> Unit,
     onClearAll: () -> Unit,
 ) {
-    val s = appStrings()
-
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -64,7 +63,7 @@ fun NotificationDialog(
                             tint = BrandPrimary,
                         )
                         Text(
-                            text = s.notificationCenter,
+                            text = t(StringKeys.NOTIFICATION_CENTER),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = BrandPrimary,
@@ -73,7 +72,7 @@ fun NotificationDialog(
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = s.close,
+                            contentDescription = t(StringKeys.CLOSE),
                             tint = OnBrandSurfaceVariant,
                         )
                     }
@@ -89,7 +88,7 @@ fun NotificationDialog(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = s.noNotifications,
+                            text = t(StringKeys.NO_NOTIFICATIONS),
                             color = OnBrandSurfaceVariant.copy(alpha = 0.7f),
                             fontSize = 15.sp,
                         )
@@ -121,7 +120,7 @@ fun NotificationDialog(
                         enabled = notifications.isNotEmpty(),
                     ) {
                         Text(
-                            text = s.clearAll,
+                            text = t(StringKeys.CLEAR_ALL),
                             fontWeight = FontWeight.Bold,
                             color = if (notifications.isNotEmpty()) BrandSecondary else OnBrandSurfaceVariant.copy(alpha = 0.4f),
                         )

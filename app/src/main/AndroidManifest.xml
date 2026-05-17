@@ -15,6 +15,10 @@
             <action android:name="android.intent.action.GET_CONTENT" />
             <data android:mimeType="image/*" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" android:host="wa.me" />
+        </intent>
     </queries>
 
     <application

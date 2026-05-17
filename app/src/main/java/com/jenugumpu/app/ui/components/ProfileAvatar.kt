@@ -20,7 +20,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.theme.BrandOutlineVariant
 import com.jenugumpu.app.ui.theme.BrandPrimary
 import com.jenugumpu.app.ui.viewmodel.LocalUserViewModel
@@ -35,7 +36,7 @@ fun ProfileAvatar(
 ) {
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsStateWithLifecycle()
-    val description = contentDescription ?: appStrings().profile
+    val description = contentDescription ?: t(StringKeys.PROFILE)
 
     val shapeModifier = modifier
         .size(size)

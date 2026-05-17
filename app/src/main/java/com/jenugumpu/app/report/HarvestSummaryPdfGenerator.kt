@@ -19,11 +19,10 @@ class HarvestSummaryPdfGenerator {
         val pageWidth = 595
         val pageHeight = 842
         val margin = 40f
-
-        val pdfDocument = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-        val page = pdfDocument.startPage(pageInfo)
-        val canvas = page.canvas
+        val rowHeight = 26f
+        val tableWidth = pageWidth - (margin * 2)
+        val columnWeights = floatArrayOf(0.14f, 0.24f, 0.16f, 0.18f, 0.28f)
+        val columnWidths = columnWeights.map { it * tableWidth }
 
         val titlePaint = Paint().apply {
             textSize = 22f
@@ -52,7 +51,40 @@ class HarvestSummaryPdfGenerator {
             color = 0xFFF5F0E8.toInt()
         }
 
+        val pdfDocument = PdfDocument()
+        var pageNumber = 1
+        var page = pdfDocument.startPage(
+            PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+        )
+        var canvas = page.canvas
         var y = margin
+
+        fun drawRow(values: List<String>, top: Float, isHeader: Boolean) {
+            if (isHeader) {
+                canvas.drawRect(margin, top, margin + tableWidth, top + rowHeight, headerFillPaint)
+            }
+            var x = margin
+            values.forEachIndexed { index, value ->
+                val paint = if (isHeader) headerPaint else cellPaint
+                canvas.drawText(value, x + 6f, top + 18f, paint)
+                x += columnWidths[index]
+            }
+            canvas.drawLine(margin, top + rowHeight, margin + tableWidth, top + rowHeight, linePaint)
+        }
+
+        fun startNewPage(drawTableHeader: Boolean) {
+            pdfDocument.finishPage(page)
+            pageNumber++
+            page = pdfDocument.startPage(
+                PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+            )
+            canvas = page.canvas
+            y = margin
+            if (drawTableHeader) {
+                drawRow(columnHeaders, y, isHeader = true)
+                y += rowHeight
+            }
+        }
 
         canvas.drawText(title, margin, y, titlePaint)
         y += 28f
@@ -61,36 +93,12 @@ class HarvestSummaryPdfGenerator {
         canvas.drawText("$totalLabel: $totalValue kg", margin, y, headerPaint)
         y += 28f
 
-        val tableWidth = pageWidth - (margin * 2)
-        val columnWeights = floatArrayOf(0.14f, 0.24f, 0.16f, 0.18f, 0.28f)
-        val columnWidths = columnWeights.map { it * tableWidth }
-        val rowHeight = 26f
-
-        fun drawRow(
-            values: List<String>,
-            top: Float,
-            isHeader: Boolean,
-        ) {
-            if (isHeader) {
-                canvas.drawRect(margin, top, margin + tableWidth, top + rowHeight, headerFillPaint)
-            }
-
-            var x = margin
-            values.forEachIndexed { index, value ->
-                val paint = if (isHeader) headerPaint else cellPaint
-                canvas.drawText(value, x + 6f, top + 18f, paint)
-                x += columnWidths[index]
-            }
-
-            canvas.drawLine(margin, top + rowHeight, margin + tableWidth, top + rowHeight, linePaint)
-        }
-
         drawRow(columnHeaders, y, isHeader = true)
         y += rowHeight
 
         rows.forEach { row ->
             if (y + rowHeight > pageHeight - margin) {
-                return@forEach
+                startNewPage(drawTableHeader = true)
             }
             drawRow(
                 listOf(
@@ -104,6 +112,11 @@ class HarvestSummaryPdfGenerator {
                 isHeader = false,
             )
             y += rowHeight
+        }
+
+        if (rows.isEmpty()) {
+            val emptyPaint = cellPaint.apply { textSize = 12f }
+            canvas.drawText("—", margin + 6f, y + 18f, emptyPaint)
         }
 
         pdfDocument.finishPage(page)

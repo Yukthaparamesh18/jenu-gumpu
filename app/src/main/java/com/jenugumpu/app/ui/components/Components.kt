@@ -18,7 +18,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.*
 import com.jenugumpu.app.ui.viewmodel.LocalNotificationViewModel
@@ -31,7 +32,6 @@ fun AppTopBar(
     showNotifications: Boolean = true,
     onProfileClick: () -> Unit = {},
 ) {
-    val s = appStrings()
     val notificationViewModel = LocalNotificationViewModel.current
     val notifications by notificationViewModel.notifications.collectAsStateWithLifecycle()
     val showNotificationDialog = remember { mutableStateOf(false) }
@@ -47,7 +47,7 @@ fun AppTopBar(
     TopAppBar(
         title = {
             Text(
-                text = title ?: s.appName,
+                text = title ?: t(StringKeys.APP_NAME),
                 fontWeight = FontWeight.ExtraBold,
                 color = BrandPrimary,
                 fontSize = 26.sp,
@@ -66,7 +66,7 @@ fun AppTopBar(
                     IconButton(onClick = { showNotificationDialog.value = true }) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
-                            contentDescription = s.notifications,
+                            contentDescription = t(StringKeys.NOTIFICATIONS),
                             tint = BrandPrimary,
                             modifier = Modifier.size(28.dp),
                         )
@@ -80,7 +80,7 @@ fun AppTopBar(
                     modifier = Modifier.padding(4.dp),
                     size = 44.dp,
                     onClick = onProfileClick,
-                    contentDescription = s.profile,
+                    contentDescription = t(StringKeys.PROFILE),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
             }
@@ -93,13 +93,12 @@ fun AppTopBar(
 
 @Composable
 fun JenuGumpuBottomBar(navController: NavController) {
-    val s = appStrings()
     val items = listOf(
-        NavigationItem(s.navHome, Screen.Dashboard.route, Icons.Default.Home),
-        NavigationItem(s.navHarvest, Screen.HarvestLog.route, Icons.Default.Agriculture),
-        NavigationItem(s.navStock, Screen.OfflineMode.route, Icons.Default.Inventory2),
-        NavigationItem(s.navPrices, Screen.Reports.route, Icons.Default.Payments),
-        NavigationItem(s.navProfile, Screen.Profile.route, Icons.Default.Person)
+        NavigationItem(t(StringKeys.NAV_HOME), Screen.Dashboard.route, Icons.Default.Home),
+        NavigationItem(t(StringKeys.NAV_HARVEST), Screen.HarvestLog.route, Icons.Default.Agriculture),
+        NavigationItem(t(StringKeys.NAV_STOCK), Screen.OfflineMode.route, Icons.Default.Inventory2),
+        NavigationItem(t(StringKeys.NAV_PRICES), Screen.Reports.route, Icons.Default.Payments),
+        NavigationItem(t(StringKeys.NAV_PROFILE), Screen.Profile.route, Icons.Default.Person)
     )
 
     val navBackStackEntry = navController.currentBackStackEntryAsState()

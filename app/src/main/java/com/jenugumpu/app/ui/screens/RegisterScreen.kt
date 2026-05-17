@@ -11,18 +11,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.jenugumpu.app.auth.navigateToVerifyOtp
-import com.jenugumpu.app.auth.CredentialValidator
-import com.jenugumpu.app.auth.ValidationResult
-import com.jenugumpu.app.localization.appStrings
-import com.jenugumpu.app.localization.validationMessage
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.BrandPrimary
+import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
+import com.jenugumpu.app.ui.viewmodel.LocalUserViewModel
+import com.jenugumpu.app.ui.viewmodel.PhoneLoginRequest
 
 @Composable
 fun RegisterScreen(navController: NavController) {
-    val s = appStrings()
+    val mainViewModel = LocalMainViewModel.current
+    val userViewModel = LocalUserViewModel.current
+    val authState by userViewModel.authState.collectAsStateWithLifecycle()
+
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var nameError by remember { mutableStateOf<String?>(null) }
@@ -40,13 +45,13 @@ fun RegisterScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = s.joinApp,
+                text = t(StringKeys.JOIN_APP),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = BrandPrimary
             )
             Text(
-                text = s.registerSubtitle,
+                text = t(StringKeys.REGISTER_SUBTITLE),
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 48.dp)
@@ -58,12 +63,13 @@ fun RegisterScreen(navController: NavController) {
                     name = it
                     nameError = null
                 },
-                label = { Text(s.fullName) },
+                label = { Text(t(StringKeys.FULL_NAME)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 isError = nameError != null,
                 supportingText = nameError?.let { error -> { Text(error) } },
                 singleLine = true,
+                enabled = !authState.isLoading,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -75,57 +81,59 @@ fun RegisterScreen(navController: NavController) {
                         .take(14)
                     phoneError = null
                 },
-                label = { Text(s.phoneNumber) },
+                label = { Text(t(StringKeys.PHONE_NUMBER)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 isError = phoneError != null,
                 supportingText = phoneError?.let { error -> { Text(error) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true,
+                enabled = !authState.isLoading,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
-                    val nameResult = CredentialValidator.validateName(name)
-                    val phoneResult = CredentialValidator.validatePhone(phone)
-                    var hasError = false
-
-                    if (nameResult is ValidationResult.Invalid) {
-                        nameError = s.validationMessage(nameResult.error)
-                        hasError = true
-                    } else {
-                        nameError = null
-                    }
-
-                    if (phoneResult is ValidationResult.Invalid) {
-                        phoneError = s.validationMessage(phoneResult.error)
-                        hasError = true
-                    } else {
-                        phoneError = null
-                    }
-
-                    if (!hasError && nameResult is ValidationResult.Valid && phoneResult is ValidationResult.Valid) {
-                        navController.navigateToVerifyOtp(
-                            phone = phoneResult.normalized,
-                            name = nameResult.normalized,
-                        )
+                    when (val request = userViewModel.requestPhoneLogin(phone, name)) {
+                        is PhoneLoginRequest.ProceedToOtp -> {
+                            nameError = null
+                            phoneError = null
+                            navController.navigateToVerifyOtp(
+                                phone = request.phone,
+                                name = request.name,
+                            )
+                        }
+                        is PhoneLoginRequest.ValidationFailed -> {
+                            when (request.error) {
+                                com.jenugumpu.app.auth.ValidationError.NameRequired,
+                                com.jenugumpu.app.auth.ValidationError.NameInvalid -> {
+                                    nameError = mainViewModel.validationMessage(request.error)
+                                }
+                                else -> {
+                                    phoneError = mainViewModel.validationMessage(request.error)
+                                }
+                            }
+                        }
                     }
                 },
+                enabled = !authState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
             ) {
-                Text(s.register, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(t(StringKeys.REGISTER), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = { navController.navigate(Screen.Login.route) }) {
-                Text(s.alreadyHaveAccount, color = MaterialTheme.colorScheme.secondary)
+            TextButton(
+                onClick = { navController.navigate(Screen.Login.route) },
+                enabled = !authState.isLoading,
+            ) {
+                Text(t(StringKeys.ALREADY_HAVE_ACCOUNT), color = MaterialTheme.colorScheme.secondary)
             }
         }
     }

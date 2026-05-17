@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,31 +12,42 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
+import com.jenugumpu.app.localization.tBatchNumber
+import com.jenugumpu.app.model.Harvest
 import com.jenugumpu.app.ui.components.JenuGumpuBottomBar
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.*
+import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HarvestLogScreen(navController: NavController) {
-    val s = appStrings()
+    val mainViewModel = LocalMainViewModel.current
+    val harvests by mainViewModel.harvests.collectAsStateWithLifecycle()
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredHarvests = remember(harvests, searchQuery) {
+        mainViewModel.filterHarvests(searchQuery)
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(s.harvestLog, fontWeight = FontWeight.Bold) },
+                title = { Text(t(StringKeys.HARVEST_LOG), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = s.back)
+                        Icon(Icons.Default.ArrowBack, contentDescription = t(StringKeys.BACK))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
@@ -53,18 +65,20 @@ fun HarvestLogScreen(navController: NavController) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    placeholder = { Text(s.searchBatches) },
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(t(StringKeys.SEARCH_BATCHES)) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = Color.White,
                         focusedContainerColor = Color.White
                     )
                 )
             }
+
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -91,13 +105,13 @@ fun HarvestLogScreen(navController: NavController) {
                         }
                         Spacer(modifier = Modifier.height(20.dp))
                         Text(
-                            s.readyForGrading,
+                            t(StringKeys.READY_FOR_GRADING),
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            s.pendingBatches,
+                            mainViewModel.pendingBatchesTitle(),
                             color = Color.White,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -113,7 +127,7 @@ fun HarvestLogScreen(navController: NavController) {
                                 .height(56.dp)
                         ) {
                             Text(
-                                s.startGradingNow,
+                                t(StringKeys.START_GRADING_NOW),
                                 color = BrandSecondary,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 14.sp,
@@ -133,7 +147,7 @@ fun HarvestLogScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        s.batchHistory,
+                        t(StringKeys.BATCH_HISTORY),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = OnBrandSurface
@@ -143,7 +157,7 @@ fun HarvestLogScreen(navController: NavController) {
                         shape = CircleShape
                     ) {
                         Text(
-                            s.recent,
+                            "${filteredHarvests.size}",
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
@@ -153,35 +167,72 @@ fun HarvestLogScreen(navController: NavController) {
                 }
             }
 
-            items(10) { i ->
-                val batchId = 100 - i
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(BrandPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(s.batchNumber(batchId), fontWeight = FontWeight.Bold, color = BrandPrimary)
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(s.batchLabel(batchId), fontWeight = FontWeight.Bold)
-                            Text(s.batchWeight, fontSize = 12.sp, color = Color.Gray)
-                        }
-                        Text(s.active, color = BrandSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
+            if (filteredHarvests.isEmpty()) {
+                item {
+                    Text(
+                        text = if (searchQuery.isBlank()) {
+                            t(StringKeys.BATCH_HISTORY)
+                        } else {
+                            "No batches match \"$searchQuery\""
+                        },
+                        modifier = Modifier.padding(vertical = 24.dp),
+                        color = OnBrandSurfaceVariant,
+                    )
+                }
+            } else {
+                items(filteredHarvests, key = { it.id }) { harvest ->
+                    HarvestLogRow(
+                        harvest = harvest,
+                        mainViewModel = mainViewModel,
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HarvestLogRow(
+    harvest: Harvest,
+    mainViewModel: com.jenugumpu.app.ui.viewmodel.MainViewModel,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(BrandPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    tBatchNumber(harvest.id),
+                    fontWeight = FontWeight.Bold,
+                    color = BrandPrimary,
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(mainViewModel.harvestBatchLabel(harvest), fontWeight = FontWeight.Bold)
+                Text(
+                    mainViewModel.harvestWeightLabel(harvest),
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                )
+            }
+            Text(
+                mainViewModel.harvestStatusLabel(harvest.status),
+                color = BrandSecondary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+            )
         }
     }
 }

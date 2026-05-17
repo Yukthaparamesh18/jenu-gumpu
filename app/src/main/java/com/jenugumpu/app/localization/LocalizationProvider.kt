@@ -1,9 +1,5 @@
 package com.jenugumpu.app.localization
 
-import androidx.compose.runtime.compositionLocalOf
-
-val LocalAppStrings = compositionLocalOf { LocalizationProvider.strings(AppLanguage.ENGLISH) }
-
 object LocalizationProvider {
 
     fun strings(language: AppLanguage): AppStrings = when (language) {
@@ -136,6 +132,7 @@ object LocalizationProvider {
         signingIn = "Signing in…",
         uploadNewPhoto = "Upload New Photo",
         removeCurrentPhoto = "Remove Current Photo",
+        removeProfilePicture = "Remove Profile Picture",
         changeProfilePhoto = "Change Profile Photo",
         notificationCenter = "Notification Center",
         clearAll = "Clear All",
@@ -152,6 +149,8 @@ object LocalizationProvider {
         pdfColumnDate = "Harvested",
         pdfSavedToDownloads = "Report saved to Downloads",
         pdfGenerationFailed = "Could not generate report",
+        pdfNoHarvestData = "No harvest data to include in the report",
+        supportWhatsappUnavailable = "Could not open WhatsApp. Install WhatsApp or check the support number.",
         openReport = "Open",
         shareReport = "Share",
         reportActions = "Report ready",
@@ -278,6 +277,7 @@ object LocalizationProvider {
         signingIn = "ಸೈನ್ ಇನ್ ಆಗುತ್ತಿದೆ…",
         uploadNewPhoto = "ಹೊಸ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
         removeCurrentPhoto = "ಪ್ರಸ್ತುತ ಫೋಟೋ ತೆಗೆದುಹಾಕಿ",
+        removeProfilePicture = "ಪ್ರೊಫೈಲ್ ಚಿತ್ರವನ್ನು ತೆಗೆದುಹಾಕಿ",
         changeProfilePhoto = "ಪ್ರೊಫೈಲ್ ಫೋಟೋ ಬದಲಾಯಿಸಿ",
         notificationCenter = "ಅಧಿಸೂಚನಾ ಕೇಂದ್ರ",
         clearAll = "ಎಲ್ಲಾ ತೆರವುಗೊಳಿಸಿ",
@@ -294,6 +294,8 @@ object LocalizationProvider {
         pdfColumnDate = "ಸಂಗ್ರಹಿಸಿದ ದಿನಾಂಕ",
         pdfSavedToDownloads = "ವರದಿ ಡೌನ್‌ಲೋಡ್‌ಗಳಲ್ಲಿ ಉಳಿಸಲಾಗಿದೆ",
         pdfGenerationFailed = "ವರದಿ ರಚಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ",
+        pdfNoHarvestData = "ವರದಿಗೆ ಸೇರಿಸಲು ಸಂಗ್ರಹ ಡೇಟಾ ಇಲ್ಲ",
+        supportWhatsappUnavailable = "WhatsApp ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ",
         openReport = "ತೆರೆಯಿರಿ",
         shareReport = "ಹಂಚಿಕೊಳ್ಳಿ",
         reportActions = "ವರದಿ ಸಿದ್ಧವಾಗಿದೆ",
@@ -359,6 +361,3 @@ object LocalizationProvider {
         navPrices = "വിലകൾ", navProfile = "പ്രൊഫൈൽ",
     )
 }
-
-@androidx.compose.runtime.Composable
-fun appStrings(): AppStrings = LocalAppStrings.current

@@ -19,15 +19,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavController
 import com.jenugumpu.app.localization.AppLanguage
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.theme.BrandPrimary
 import com.jenugumpu.app.ui.theme.OnBrandSurfaceVariant
+import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
 import com.jenugumpu.app.ui.viewmodel.LocalSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageScreen(navController: NavController) {
-    val s = appStrings()
+    val mainViewModel = LocalMainViewModel.current
     val settingsViewModel = LocalSettingsViewModel.current
     val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
     var pendingLanguage by remember(settingsState.selectedLanguage) {
@@ -38,10 +40,10 @@ fun LanguageScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(s.language, fontWeight = FontWeight.Bold, color = BrandPrimary) },
+                title = { Text(t(StringKeys.LANGUAGE), fontWeight = FontWeight.Bold, color = BrandPrimary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = s.back, tint = BrandPrimary)
+                        Icon(Icons.Default.ArrowBack, contentDescription = t(StringKeys.BACK), tint = BrandPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -84,7 +86,7 @@ fun LanguageScreen(navController: NavController) {
                             color = if (isSelected) BrandPrimary else OnBrandSurfaceVariant
                         )
                         if (isSelected) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = s.selected, tint = BrandPrimary)
+                            Icon(Icons.Default.CheckCircle, contentDescription = t(StringKeys.SELECTED), tint = BrandPrimary)
                         }
                     }
                 }
@@ -95,13 +97,14 @@ fun LanguageScreen(navController: NavController) {
                 Button(
                     onClick = {
                         settingsViewModel.setLanguage(pendingLanguage)
+                        mainViewModel.setLanguage(pendingLanguage)
                         navController.popBackStack()
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
                 ) {
-                    Text(s.applyLanguage, fontWeight = FontWeight.Bold)
+                    Text(t(StringKeys.APPLY_LANGUAGE), fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.jenugumpu.app.ui.screens
 
-import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,42 +15,56 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.jenugumpu.app.R
+import com.jenugumpu.app.auth.GoogleSignInActivityHelper
 import com.jenugumpu.app.auth.navigateToDashboardClearingAuth
 import com.jenugumpu.app.auth.navigateToVerifyOtp
-import com.jenugumpu.app.auth.CredentialValidator
-import com.jenugumpu.app.auth.GoogleSignInManager
-import com.jenugumpu.app.auth.GoogleSignInOutcome
-import com.jenugumpu.app.auth.ValidationResult
-import com.jenugumpu.app.localization.appStrings
-import com.jenugumpu.app.localization.validationMessage
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.BrandPrimary
+import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
 import com.jenugumpu.app.ui.viewmodel.LocalUserViewModel
-import kotlinx.coroutines.launch
+import com.jenugumpu.app.ui.viewmodel.PhoneLoginRequest
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    val s = appStrings()
+    val mainViewModel = LocalMainViewModel.current
     val userViewModel = LocalUserViewModel.current
+    val authState by userViewModel.authState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val activity = context as ComponentActivity
-    val scope = rememberCoroutineScope()
-    val googleSignInManager = remember {
-        GoogleSignInManager(context.getString(R.string.google_web_client_id))
+
+    val googleSignInHelper = remember {
+        GoogleSignInActivityHelper(
+            context = context,
+            webClientId = context.getString(R.string.google_web_client_id),
+        )
+    }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        userViewModel.handleGoogleSignInOutcome(
+            googleSignInHelper.parseResult(result.resultCode, result.data),
+        )
     }
 
     var phone by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf<String?>(null) }
-    var isGoogleLoading by remember { mutableStateOf(false) }
-    var authMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(authMessage) {
-        authMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            authMessage = null
+    LaunchedEffect(authState.isAuthenticated) {
+        if (authState.isAuthenticated) {
+            navController.navigateToDashboardClearingAuth()
+        }
+    }
+
+    LaunchedEffect(authState.errorMessage) {
+        authState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            userViewModel.clearAuthError()
         }
     }
 
@@ -66,13 +81,13 @@ fun LoginScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = s.welcomeBack,
+                text = t(StringKeys.WELCOME_BACK),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = BrandPrimary
             )
             Text(
-                text = s.signInSubtitle,
+                text = t(StringKeys.SIGN_IN_SUBTITLE),
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 48.dp)
@@ -85,36 +100,38 @@ fun LoginScreen(navController: NavController) {
                         .take(14)
                     phoneError = null
                 },
-                label = { Text(s.phoneNumber) },
+                label = { Text(t(StringKeys.PHONE_NUMBER)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 isError = phoneError != null,
                 supportingText = phoneError?.let { error -> { Text(error) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true,
+                enabled = !authState.isLoading,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
-                    when (val result = CredentialValidator.validatePhone(phone)) {
-                        is ValidationResult.Valid -> {
+                    when (val request = userViewModel.requestPhoneLogin(phone)) {
+                        is PhoneLoginRequest.ProceedToOtp -> {
                             phoneError = null
-                            navController.navigateToVerifyOtp(result.normalized)
+                            navController.navigateToVerifyOtp(request.phone)
                         }
-                        is ValidationResult.Invalid -> {
-                            phoneError = s.validationMessage(result.error)
+                        is PhoneLoginRequest.ValidationFailed -> {
+                            phoneError = mainViewModel.validationMessage(request.error)
                         }
                     }
                 },
+                enabled = !authState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
             ) {
-                Text(s.sendCode, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(t(StringKeys.SEND_CODE), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -123,28 +140,11 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.Black.copy(alpha = 0.05f),
                 shape = RoundedCornerShape(16.dp),
-                enabled = !isGoogleLoading,
+                enabled = !authState.isLoading,
                 onClick = {
-                    if (isGoogleLoading) return@Surface
-                    scope.launch {
-                        isGoogleLoading = true
-                        when (val outcome = googleSignInManager.signIn(activity)) {
-                            is GoogleSignInOutcome.Success -> {
-                                userViewModel.signIn(
-                                    fullName = outcome.account.displayName,
-                                    email = outcome.account.email,
-                                )
-                                navController.navigateToDashboardClearingAuth()
-                            }
-                            GoogleSignInOutcome.Cancelled -> {
-                                authMessage = s.googleSignInCancelled
-                            }
-                            is GoogleSignInOutcome.Failure -> {
-                                authMessage = outcome.message.ifBlank { s.googleSignInFailed }
-                            }
-                        }
-                        isGoogleLoading = false
-                    }
+                    if (authState.isLoading) return@Surface
+                    userViewModel.setGoogleSignInLoading(true)
+                    googleSignInLauncher.launch(googleSignInHelper.signInIntent)
                 }
             ) {
                 Row(
@@ -152,24 +152,27 @@ fun LoginScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (isGoogleLoading) {
+                    if (authState.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp,
                             color = BrandPrimary,
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(s.signingIn, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(t(StringKeys.SIGNING_IN), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     } else {
-                        Text(s.continueWithGoogle, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(t(StringKeys.CONTINUE_WITH_GOOGLE), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = { navController.navigate(Screen.Register.route) }) {
-                Text(s.noAccountRegister, color = MaterialTheme.colorScheme.secondary)
+            TextButton(
+                onClick = { navController.navigate(Screen.Register.route) },
+                enabled = !authState.isLoading,
+            ) {
+                Text(t(StringKeys.NO_ACCOUNT_REGISTER), color = MaterialTheme.colorScheme.secondary)
             }
         }
     }

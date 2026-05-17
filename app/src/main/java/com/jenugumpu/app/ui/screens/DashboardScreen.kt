@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,22 +12,33 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
+import com.jenugumpu.app.model.Harvest
 import com.jenugumpu.app.ui.components.AppTopBar
 import com.jenugumpu.app.ui.components.JenuGumpuBottomBar
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.*
+import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun DashboardScreen(navController: NavController) {
-    val s = appStrings()
+    val mainViewModel = LocalMainViewModel.current
+    val harvests by mainViewModel.harvests.collectAsStateWithLifecycle()
+    val recentHarvests = harvests.take(5)
 
     Scaffold(
         topBar = {
@@ -42,7 +54,7 @@ fun DashboardScreen(navController: NavController) {
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = s.addHarvest)
+                Icon(Icons.Default.Add, contentDescription = t(StringKeys.ADD_HARVEST))
             }
         }
     ) { padding ->
@@ -56,14 +68,14 @@ fun DashboardScreen(navController: NavController) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = s.welcomeBackExclaim,
+                    text = t(StringKeys.WELCOME_BACK_EXCLAIM),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = BrandPrimary,
                     letterSpacing = (-0.5).sp
                 )
                 Text(
-                    text = s.honeyFarmerDashboard,
+                    text = t(StringKeys.HONEY_FARMER_DASHBOARD),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
@@ -89,16 +101,20 @@ fun DashboardScreen(navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                s.totalHoneyHarvested,
+                                t(StringKeys.TOTAL_HONEY_HARVESTED),
                                 color = Color.White.copy(alpha = 0.8f),
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             )
-                            Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color.White.copy(alpha = 0.5f))
+                            Icon(
+                                Icons.AutoMirrored.Filled.TrendingUp,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.5f),
+                            )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "124.5 kg",
+                            mainViewModel.formattedTotalYield(),
                             fontSize = 42.sp,
                             fontWeight = FontWeight.Black,
                             color = Color.White,
@@ -110,7 +126,7 @@ fun DashboardScreen(navController: NavController) {
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                s.percentFromLastMonth,
+                                t(StringKeys.PERCENT_FROM_LAST_MONTH),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 color = Color.White,
                                 fontSize = 10.sp,
@@ -130,40 +146,76 @@ fun DashboardScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = s.recentActivity,
+                        text = t(StringKeys.RECENT_ACTIVITY),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = OnBrandSurface
                     )
                     TextButton(onClick = { navController.navigate(Screen.HarvestLog.route) }) {
-                        Text(s.viewAll, color = BrandSecondary, fontWeight = FontWeight.Bold)
+                        Text(t(StringKeys.VIEW_ALL), color = BrandSecondary, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            items(5) { i ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(BrandPrimary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                        )
-                        Column {
-                            Text(s.wildflowerBatchLabel(i), fontWeight = FontWeight.Bold)
-                            Text(s.harvestedAgo, fontSize = 12.sp, color = Color.Gray)
-                        }
-                    }
+            if (recentHarvests.isEmpty()) {
+                item {
+                    Text(
+                        text = t(StringKeys.ADD_HARVEST),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+            } else {
+                items(recentHarvests, key = { it.id }) { harvest ->
+                    DashboardHarvestRow(
+                        harvest = harvest,
+                        mainViewModel = mainViewModel,
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DashboardHarvestRow(
+    harvest: Harvest,
+    mainViewModel: com.jenugumpu.app.ui.viewmodel.MainViewModel,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(BrandPrimary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+            )
+            Column {
+                Text(mainViewModel.harvestBatchLabel(harvest), fontWeight = FontWeight.Bold)
+                Text(
+                    harvestedAgoLabel(harvest.harvestedAtMillis),
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                )
+            }
+        }
+    }
+}
+
+private fun harvestedAgoLabel(harvestedAtMillis: Long): String {
+    val diffMs = (System.currentTimeMillis() - harvestedAtMillis).coerceAtLeast(0L)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(diffMs)
+    return when {
+        minutes < 1 -> "Just now"
+        minutes < 60 -> "$minutes min ago"
+        minutes < 24 * 60 -> "${minutes / 60} hours ago"
+        else -> SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(harvestedAtMillis))
     }
 }

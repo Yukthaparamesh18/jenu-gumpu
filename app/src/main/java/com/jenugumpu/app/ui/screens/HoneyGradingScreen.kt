@@ -13,22 +13,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.components.JenuGumpuBottomBar
 import com.jenugumpu.app.ui.theme.BrandPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HoneyGradingScreen(navController: NavController) {
-    val s = appStrings()
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(s.honeyGrading, fontWeight = FontWeight.Bold) },
+                title = { Text(t(StringKeys.HONEY_GRADING), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = s.back)
+                        Icon(Icons.Default.ArrowBack, contentDescription = t(StringKeys.BACK))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -44,9 +43,9 @@ fun HoneyGradingScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(s.gradingSystem, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BrandPrimary)
+            Text(t(StringKeys.GRADING_SYSTEM), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BrandPrimary)
             Spacer(modifier = Modifier.height(16.dp))
-            Text(s.featureComingSoon, color = Color.Gray)
+            Text(t(StringKeys.FEATURE_COMING_SOON), color = Color.Gray)
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -56,7 +55,7 @@ fun HoneyGradingScreen(navController: NavController) {
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
             ) {
-                Text(s.goBack)
+                Text(t(StringKeys.GO_BACK))
             }
         }
     }

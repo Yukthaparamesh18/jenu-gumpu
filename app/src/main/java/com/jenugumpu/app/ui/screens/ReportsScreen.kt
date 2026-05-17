@@ -17,13 +17,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.jenugumpu.app.localization.appStrings
+import com.jenugumpu.app.localization.StringKeys
+import com.jenugumpu.app.localization.t
+import com.jenugumpu.app.model.HarvestStatus
 import com.jenugumpu.app.report.HarvestSummaryData
 import com.jenugumpu.app.report.PdfExportResult
 import com.jenugumpu.app.report.PdfReportExporter
 import com.jenugumpu.app.ui.components.JenuGumpuBottomBar
 import com.jenugumpu.app.ui.theme.*
+import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -33,7 +37,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(navController: NavController) {
-    val s = appStrings()
+    val mainViewModel = LocalMainViewModel.current
+    val harvests by mainViewModel.harvests.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -42,16 +47,16 @@ fun ReportsScreen(navController: NavController) {
     var exportedReport by remember { mutableStateOf<PdfExportResult.Success?>(null) }
 
     val reports = listOf(
-        s.monthlyProductionReport to s.monthlyProductionReportSub,
-        s.profitSummaryReport to s.profitSummaryReportSub,
-        s.stockInventoryReport to s.stockInventoryReportSub,
+        t(StringKeys.MONTHLY_PRODUCTION_REPORT) to t(StringKeys.MONTHLY_PRODUCTION_REPORT_SUB),
+        t(StringKeys.PROFIT_SUMMARY_REPORT) to t(StringKeys.PROFIT_SUMMARY_REPORT_SUB),
+        t(StringKeys.STOCK_INVENTORY_REPORT) to t(StringKeys.STOCK_INVENTORY_REPORT_SUB),
     )
 
     exportedReport?.let { report ->
         AlertDialog(
             onDismissRequest = { exportedReport = null },
-            title = { Text(s.reportActions, fontWeight = FontWeight.Bold) },
-            text = { Text("${s.pdfSavedToDownloads}\n${report.displayName}") },
+            title = { Text(t(StringKeys.REPORT_ACTIONS), fontWeight = FontWeight.Bold) },
+            text = { Text("${t(StringKeys.PDF_SAVED_TO_DOWNLOADS)}\n${report.displayName}") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -60,13 +65,15 @@ fun ReportsScreen(navController: NavController) {
                             context.startActivity(viewIntent)
                         } else {
                             scope.launch {
-                                snackbarHostState.showSnackbar(s.pdfGenerationFailed)
+                                snackbarHostState.showSnackbar(
+                                    mainViewModel.getTranslatedString(StringKeys.PDF_GENERATION_FAILED)
+                                )
                             }
                         }
                         exportedReport = null
                     }
                 ) {
-                    Text(s.openReport, fontWeight = FontWeight.Bold, color = BrandPrimary)
+                    Text(t(StringKeys.OPEN_REPORT), fontWeight = FontWeight.Bold, color = BrandPrimary)
                 }
             },
             dismissButton = {
@@ -74,15 +81,15 @@ fun ReportsScreen(navController: NavController) {
                     onClick = {
                         val shareIntent = PdfReportExporter.createShareIntent(
                             uri = report.uri,
-                            subject = s.harvestSummaryReportTitle,
+                            subject = mainViewModel.getTranslatedString(StringKeys.HARVEST_SUMMARY_REPORT_TITLE),
                         )
                         context.startActivity(
-                            Intent.createChooser(shareIntent, s.shareReport)
+                            Intent.createChooser(shareIntent, mainViewModel.getTranslatedString(StringKeys.SHARE_REPORT))
                         )
                         exportedReport = null
                     }
                 ) {
-                    Text(s.shareReport, fontWeight = FontWeight.Bold, color = BrandSecondary)
+                    Text(t(StringKeys.SHARE_REPORT), fontWeight = FontWeight.Bold, color = BrandSecondary)
                 }
             },
         )
@@ -90,32 +97,45 @@ fun ReportsScreen(navController: NavController) {
 
     fun generatePdfReport() {
         if (isGenerating) return
+
+        val rows = HarvestSummaryData.fromHarvests(harvests) { status: HarvestStatus ->
+            mainViewModel.harvestStatusLabel(status)
+        }
+        if (rows.isEmpty()) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    mainViewModel.getTranslatedString(StringKeys.PDF_NO_HARVEST_DATA)
+                )
+            }
+            return
+        }
+
         scope.launch {
             isGenerating = true
-            val generatedLabel = "${s.pdfGeneratedOn} ${
+            val generatedLabel = "${mainViewModel.getTranslatedString(StringKeys.PDF_GENERATED_ON)} ${
                 SimpleDateFormat("MMM d, yyyy h:mm a", Locale.getDefault()).format(Date())
             }"
             val result = kotlinx.coroutines.withContext(Dispatchers.IO) {
                 PdfReportExporter.generateHarvestSummaryPdf(
                     context = context,
-                    title = s.harvestSummaryReportTitle,
+                    title = mainViewModel.getTranslatedString(StringKeys.HARVEST_SUMMARY_REPORT_TITLE),
                     generatedLabel = generatedLabel,
-                    totalLabel = s.totalYield,
+                    totalLabel = mainViewModel.getTranslatedString(StringKeys.TOTAL_YIELD),
                     columnHeaders = listOf(
-                        s.pdfColumnBatch,
-                        s.pdfColumnSource,
-                        s.pdfColumnYield,
-                        s.pdfColumnStatus,
-                        s.pdfColumnDate,
+                        mainViewModel.getTranslatedString(StringKeys.PDF_COLUMN_BATCH),
+                        mainViewModel.getTranslatedString(StringKeys.PDF_COLUMN_SOURCE),
+                        mainViewModel.getTranslatedString(StringKeys.PDF_COLUMN_YIELD),
+                        mainViewModel.getTranslatedString(StringKeys.PDF_COLUMN_STATUS),
+                        mainViewModel.getTranslatedString(StringKeys.PDF_COLUMN_DATE),
                     ),
-                    rows = HarvestSummaryData.sampleRows(),
+                    rows = rows,
                 )
             }
             isGenerating = false
             when (result) {
                 is PdfExportResult.Success -> exportedReport = result
                 is PdfExportResult.Failure -> snackbarHostState.showSnackbar(
-                    result.message.ifBlank { s.pdfGenerationFailed }
+                    result.message.ifBlank { mainViewModel.getTranslatedString(StringKeys.PDF_GENERATION_FAILED) }
                 )
             }
         }
@@ -124,10 +144,10 @@ fun ReportsScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(s.reports, fontWeight = FontWeight.Bold, color = BrandPrimary) },
+                title = { Text(t(StringKeys.REPORTS), fontWeight = FontWeight.Bold, color = BrandPrimary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = s.back, tint = BrandPrimary)
+                        Icon(Icons.Default.ArrowBack, contentDescription = t(StringKeys.BACK), tint = BrandPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -145,7 +165,7 @@ fun ReportsScreen(navController: NavController) {
         ) {
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                Text(s.availableReports, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = BrandSecondary)
+                Text(t(StringKeys.AVAILABLE_REPORTS), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = BrandSecondary)
             }
 
             items(reports.size) { i ->
@@ -192,11 +212,11 @@ fun ReportsScreen(navController: NavController) {
                             strokeWidth = 2.dp,
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(s.generatePdfReport, fontWeight = FontWeight.Bold)
+                        Text(t(StringKeys.GENERATE_PDF_REPORT), fontWeight = FontWeight.Bold)
                     } else {
                         Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(s.generatePdfReport, fontWeight = FontWeight.Bold)
+                        Text(t(StringKeys.GENERATE_PDF_REPORT), fontWeight = FontWeight.Bold)
                     }
                 }
             }
