@@ -22,10 +22,10 @@ import com.jenugumpu.app.ui.viewmodel.UserViewModel
 @Composable
 fun JenuGumpuApp() {
     val activity = LocalContext.current as ComponentActivity
-    val mainViewModel: MainViewModel = viewModel(viewModelStoreOwner = activity)
-    val settingsViewModel: SettingsViewModel = viewModel(viewModelStoreOwner = activity)
-    val userViewModel: UserViewModel = viewModel(viewModelStoreOwner = activity)
-    val notificationViewModel: NotificationViewModel = viewModel(viewModelStoreOwner = activity)
+    val mainViewModel = viewModel<MainViewModel>(viewModelStoreOwner = activity)
+    val settingsViewModel = viewModel<SettingsViewModel>(viewModelStoreOwner = activity)
+    val userViewModel = viewModel<UserViewModel>(viewModelStoreOwner = activity)
+    val notificationViewModel = viewModel<NotificationViewModel>(viewModelStoreOwner = activity)
 
     val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 

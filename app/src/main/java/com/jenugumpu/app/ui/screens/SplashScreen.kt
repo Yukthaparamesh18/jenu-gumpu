@@ -20,14 +20,23 @@ import com.jenugumpu.app.localization.StringKeys
 import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.BrandPrimary
+import com.jenugumpu.app.ui.viewmodel.LocalUserViewModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavController) {
+    val userViewModel = LocalUserViewModel.current
+
     LaunchedEffect(Unit) {
         delay(2500)
-        navController.navigate(Screen.Login.route) {
-            popUpTo(Screen.Splash.route) { inclusive = true }
+        if (userViewModel.authState.value.isAuthenticated) {
+            navController.navigate(Screen.Dashboard.route) {
+                popUpTo(Screen.Splash.route) { inclusive = true }
+            }
+        } else {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(Screen.Splash.route) { inclusive = true }
+            }
         }
     }
 

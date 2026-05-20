@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.jenugumpu.app.auth.navigateToVerifyOtp
+import com.jenugumpu.app.auth.navigateToDashboardClearingAuth
+import kotlinx.coroutines.launch
 import com.jenugumpu.app.localization.StringKeys
 import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.navigation.Screen
@@ -27,14 +29,36 @@ fun RegisterScreen(navController: NavController) {
     val mainViewModel = LocalMainViewModel.current
     val userViewModel = LocalUserViewModel.current
     val authState by userViewModel.authState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
+
     var nameError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(authState.isAuthenticated) {
+        if (authState.isAuthenticated) {
+            navController.navigateToDashboardClearingAuth()
+        }
+    }
+
+    LaunchedEffect(authState.errorMessage) {
+        authState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            userViewModel.clearAuthError()
+        }
+    }
+
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -73,6 +97,86 @@ fun RegisterScreen(navController: NavController) {
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    emailError = null
+                },
+                label = { Text(t(StringKeys.EMAIL_ADDRESS)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                isError = emailError != null,
+                supportingText = emailError?.let { error -> { Text(error) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true,
+                enabled = !authState.isLoading,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    passwordError = null
+                },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                isError = passwordError != null,
+                supportingText = passwordError?.let { error -> { Text(error) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                singleLine = true,
+                enabled = !authState.isLoading,
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    if (name.isBlank()) {
+                        nameError = "Name is required"
+                        return@Button
+                    }
+                    if (email.isBlank()) {
+                        emailError = "Email is required"
+                        return@Button
+                    }
+                    if (password.length < 6) {
+                        passwordError = "Password must be at least 6 characters"
+                        return@Button
+                    }
+                    scope.launch {
+                        userViewModel.registerUser(email, password, name)
+                    }
+                },
+                enabled = !authState.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
+            ) {
+                Text(t(StringKeys.REGISTER), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text(
+                    text = " OR ",
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
                 value = phone,

@@ -3,7 +3,7 @@
     <style name="Theme.JenuGumpu" parent="android:Theme.Material.Light.NoActionBar" />
     <string name="app_name">Jenu-Gumpu</string>
     <!-- Replace with your OAuth 2.0 Web client ID from Google Cloud Console -->
-    <string name="google_web_client_id" translatable="false">REPLACE_WITH_WEB_CLIENT_ID</string>
+    <string name="google_web_client_id" translatable="false">792449102662-ouu89eivavh68vh7s89sfl5i7mu7fk7v.apps.googleusercontent.com</string>
     <!-- E.164 without + (e.g. India 91XXXXXXXXXX) for wa.me support chat -->
     <string name="support_whatsapp_number" translatable="false">919876543210</string>
     <color name="brand_primary_container">#FFDBC0</color>

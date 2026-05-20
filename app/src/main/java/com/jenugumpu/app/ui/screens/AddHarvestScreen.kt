@@ -6,7 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import com.jenugumpu.app.localization.StringKeys
 import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.components.JenuGumpuBottomBar
@@ -27,11 +28,15 @@ import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
 @Composable
 fun AddHarvestScreen(navController: NavController) {
     val mainViewModel = LocalMainViewModel.current
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var yield by remember { mutableStateOf("") }
     var flora by remember { mutableStateOf("Wildflower") }
+    var price by remember { mutableStateOf("") }
     var yieldError by remember { mutableStateOf<String?>(null) }
     var floraError by remember { mutableStateOf<String?>(null) }
+    var priceError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -39,10 +44,10 @@ fun AddHarvestScreen(navController: NavController) {
                 title = { Text(t(StringKeys.ADD_NEW_HARVEST), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = t(StringKeys.BACK))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = t(StringKeys.BACK))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
             )
         },
         bottomBar = { JenuGumpuBottomBar(navController) }
@@ -59,9 +64,11 @@ fun AddHarvestScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = yield,
-                onValueChange = {
-                    yield = it.filter { ch -> ch.isDigit() || ch == '.' }
-                    yieldError = null
+                onValueChange = { input ->
+                    if (input.count { it == '.' } <= 1) {
+                        yield = input.filter { ch -> ch.isDigit() || ch == '.' }
+                        yieldError = null
+                    }
                 },
                 label = { Text(t(StringKeys.TOTAL_YIELD_KG)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -86,18 +93,51 @@ fun AddHarvestScreen(navController: NavController) {
                 singleLine = true,
             )
 
+            OutlinedTextField(
+                value = price,
+                onValueChange = {
+                    price = it.filter { ch -> ch.isDigit() || ch == '.' }
+                    priceError = null
+                },
+                label = { Text("Price per kg") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                isError = priceError != null,
+                supportingText = priceError?.let { error -> { Text(error) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
                     val yieldValue = yield.toDoubleOrNull()
-                    when (mainViewModel.addHarvest(flora, yieldValue ?: 0.0)) {
-                        AddHarvestResult.Success -> navController.popBackStack()
-                        AddHarvestResult.InvalidYield -> {
-                            yieldError = "Enter a valid yield greater than 0"
-                        }
-                        AddHarvestResult.InvalidFloralSource -> {
-                            floraError = "Enter a floral source (at least 2 characters)"
+                    val priceValue = price.toDoubleOrNull() ?: 0.0
+                    scope.launch {
+                        when (val result = mainViewModel.addHarvest(flora, yieldValue ?: 0.0, priceValue)) {
+                            AddHarvestResult.Success -> {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Harvest added successfully!",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                                navController.popBackStack()
+                            }
+                            AddHarvestResult.InvalidYield -> {
+                                yieldError = "Enter a valid yield greater than 0"
+                            }
+                            AddHarvestResult.InvalidFloralSource -> {
+                                floraError = "Enter a floral source (at least 2 characters)"
+                            }
+                            is AddHarvestResult.NetworkError -> {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Offline: Harvest saved locally!",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                                navController.popBackStack()
+                            }
                         }
                     }
                 },

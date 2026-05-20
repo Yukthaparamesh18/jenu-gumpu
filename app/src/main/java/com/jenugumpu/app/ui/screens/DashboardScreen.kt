@@ -11,8 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +28,8 @@ import com.jenugumpu.app.ui.components.JenuGumpuBottomBar
 import com.jenugumpu.app.ui.navigation.Screen
 import com.jenugumpu.app.ui.theme.*
 import com.jenugumpu.app.ui.viewmodel.LocalMainViewModel
+import com.jenugumpu.app.ui.viewmodel.LocalUserViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,8 +38,18 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun DashboardScreen(navController: NavController) {
     val mainViewModel = LocalMainViewModel.current
+    val userViewModel = LocalUserViewModel.current
+    val authState by userViewModel.authState.collectAsStateWithLifecycle()
     val harvests by mainViewModel.harvests.collectAsStateWithLifecycle()
     val recentHarvests = harvests.take(5)
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(authState.successMessage) {
+        authState.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            userViewModel.clearAuthSuccess()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -46,6 +57,7 @@ fun DashboardScreen(navController: NavController) {
                 onProfileClick = { navController.navigate(Screen.Profile.route) },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = { JenuGumpuBottomBar(navController) },
         floatingActionButton = {
             FloatingActionButton(

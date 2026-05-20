@@ -1,0 +1,21 @@
+{
+  "files.exclude": {
+    "**/build": true,
+    "**/.gradle": true,
+    "**/.idea": true,
+    "**/.kotlin": true
+  },
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/.gradle/**": true,
+    "**/.idea/**": true,
+    "**/.kotlin/**": true
+  },
+  "java.project.resourceFilters": [
+    "node_modules",
+    "**/build",
+    "**/.gradle",
+    "**/.idea",
+    "**/.kotlin"
+  ]
+}

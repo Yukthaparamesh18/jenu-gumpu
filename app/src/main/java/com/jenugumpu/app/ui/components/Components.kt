@@ -96,7 +96,7 @@ fun JenuGumpuBottomBar(navController: NavController) {
     val items = listOf(
         NavigationItem(t(StringKeys.NAV_HOME), Screen.Dashboard.route, Icons.Default.Home),
         NavigationItem(t(StringKeys.NAV_HARVEST), Screen.HarvestLog.route, Icons.Default.Agriculture),
-        NavigationItem(t(StringKeys.NAV_STOCK), Screen.OfflineMode.route, Icons.Default.Inventory2),
+        NavigationItem(t(StringKeys.NAV_STOCK), Screen.Stock.route, Icons.Default.Inventory2),
         NavigationItem(t(StringKeys.NAV_PRICES), Screen.Reports.route, Icons.Default.Payments),
         NavigationItem(t(StringKeys.NAV_PROFILE), Screen.Profile.route, Icons.Default.Person)
     )

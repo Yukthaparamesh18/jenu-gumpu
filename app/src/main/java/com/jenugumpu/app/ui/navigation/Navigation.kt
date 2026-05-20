@@ -23,6 +23,7 @@ sealed class Screen(val route: String) {
     object HarvestLog : Screen("harvest_log")
     object AddHarvest : Screen("add_harvest")
     object HoneyGrading : Screen("honey_grading")
+    object Stock : Screen("stock")
     object Profile : Screen("profile")
     object OfflineMode : Screen("offline_mode")
     object Reports : Screen("reports")
@@ -67,6 +68,7 @@ fun JenuGumpuNavHost() {
         composable(Screen.HarvestLog.route) { HarvestLogScreen(navController) }
         composable(Screen.AddHarvest.route) { AddHarvestScreen(navController) }
         composable(Screen.HoneyGrading.route) { HoneyGradingScreen(navController) }
+        composable(Screen.Stock.route) { StockScreen(navController) }
         composable(Screen.Profile.route) { ProfileScreen(navController) }
         composable(Screen.OfflineMode.route) { OfflineModeScreen(navController) }
         composable(Screen.Reports.route) { ReportsScreen(navController) }

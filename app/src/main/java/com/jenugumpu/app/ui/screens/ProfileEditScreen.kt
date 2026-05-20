@@ -15,11 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import com.jenugumpu.app.localization.StringKeys
 import com.jenugumpu.app.localization.t
 import com.jenugumpu.app.ui.components.ProfileAvatar
@@ -31,6 +33,8 @@ import com.jenugumpu.app.ui.viewmodel.LocalUserViewModel
 fun ProfileEditScreen(navController: NavController) {
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var name by remember(userState.fullName) { mutableStateOf(userState.fullName) }
     var email by remember(userState.email) { mutableStateOf(userState.email) }
@@ -40,7 +44,15 @@ fun ProfileEditScreen(navController: NavController) {
     val pickPhotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri ->
-        userViewModel.setProfilePhotoUri(uri?.toString())
+        uri?.let {
+            scope.launch {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val bytes = inputStream?.readBytes()
+                if (bytes != null) {
+                    userViewModel.uploadProfileImage(bytes)
+                }
+            }
+        }
     }
 
     fun openGallery() {

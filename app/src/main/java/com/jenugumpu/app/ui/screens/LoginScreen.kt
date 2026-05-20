@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.jenugumpu.app.R
+import kotlinx.coroutines.launch
 import com.jenugumpu.app.auth.GoogleSignInActivityHelper
 import com.jenugumpu.app.auth.navigateToDashboardClearingAuth
 import com.jenugumpu.app.auth.navigateToVerifyOtp
@@ -35,7 +36,6 @@ fun LoginScreen(navController: NavController) {
     val userViewModel = LocalUserViewModel.current
     val authState by userViewModel.authState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-
     val googleSignInHelper = remember {
         GoogleSignInActivityHelper(
             context = context,
@@ -52,8 +52,13 @@ fun LoginScreen(navController: NavController) {
     }
 
     var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(authState.isAuthenticated) {
         if (authState.isAuthenticated) {
@@ -90,8 +95,84 @@ fun LoginScreen(navController: NavController) {
                 text = t(StringKeys.SIGN_IN_SUBTITLE),
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp, bottom = 48.dp)
+                modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
             )
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    emailError = null
+                },
+                label = { Text(t(StringKeys.EMAIL_ADDRESS)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                isError = emailError != null,
+                supportingText = emailError?.let { error -> { Text(error) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true,
+                enabled = !authState.isLoading,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    passwordError = null
+                },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                isError = passwordError != null,
+                supportingText = passwordError?.let { error -> { Text(error) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                singleLine = true,
+                enabled = !authState.isLoading,
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    if (email.isBlank()) {
+                        emailError = "Email is required"
+                        return@Button
+                    }
+                    if (password.isBlank()) {
+                        passwordError = "Password is required"
+                        return@Button
+                    }
+                    scope.launch {
+                        userViewModel.loginUser(email, password)
+                    }
+                },
+                enabled = !authState.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
+            ) {
+                Text("Login", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text(
+                    text = " OR ",
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
                 value = phone,
@@ -144,7 +225,9 @@ fun LoginScreen(navController: NavController) {
                 onClick = {
                     if (authState.isLoading) return@Surface
                     userViewModel.setGoogleSignInLoading(true)
-                    googleSignInLauncher.launch(googleSignInHelper.signInIntent)
+                    googleSignInHelper.signOutAndSignIn { intent ->
+                        googleSignInLauncher.launch(intent)
+                    }
                 }
             ) {
                 Row(

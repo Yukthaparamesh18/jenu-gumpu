@@ -18,6 +18,7 @@ import org.json.JSONObject
 data class GoogleAccount(
     val displayName: String,
     val email: String,
+    val idToken: String? = null,
 )
 
 sealed class GoogleSignInOutcome {

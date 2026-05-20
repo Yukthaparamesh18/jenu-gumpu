@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -45,6 +46,14 @@ android {
 
 dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
+    constraints {
+        implementation("androidx.browser:browser") {
+            version {
+                strictly("1.8.0")
+            }
+            because("Version 1.10.0 requires API 36 / AGP 8.9.1")
+        }
+    }
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -61,6 +70,17 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.play.services.auth)
+
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:3.0.1")
+    implementation("io.github.jan-tennert.supabase:auth-kt:3.0.1")
+    implementation("io.github.jan-tennert.supabase:storage-kt:3.0.1")
+    implementation("io.github.jan-tennert.supabase:realtime-kt:3.0.1")
+    implementation("io.github.jan-tennert.supabase:compose-auth:3.0.1")
+    implementation("io.ktor:ktor-client-android:3.0.1")
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.ktor.client.serialization)
 
     // Using Coil for image loading
     implementation("io.coil-kt.coil3:coil-compose:3.0.0-rc01")
